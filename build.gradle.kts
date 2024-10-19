@@ -12,6 +12,7 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
+    implementation("com.github.ImAngelParraga:TennisTournamentLib:Tag")
 }
 
 tasks.test {
