@@ -26,10 +26,4 @@ data class Match(
 
 		winner = if (player1Wins > player2Wins) player1 else player2
 	}
-
-	fun setSets(sets: List<SetResult>) {
-		require(sets.size % 2 == 1) { "Sets number must be odd" }
-
-		this.sets = sets
-	}
 }
