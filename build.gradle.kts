@@ -22,6 +22,8 @@ tasks.test {
 publishing {
     publications {
         create<MavenPublication>("maven") {
+            group = "parraga.bros"
+            version = "1.0"
             artifactId = "TennisTournamentLib"
 
             from(components["java"])
