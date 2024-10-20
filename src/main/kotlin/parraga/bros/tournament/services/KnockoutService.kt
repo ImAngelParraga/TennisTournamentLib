@@ -1,22 +1,22 @@
-package parraga.bros.TennisTournamentLib.services
+package parraga.bros.tournament.services
 
-import domain.Match
-import domain.Player
+import parraga.bros.tournament.domain.Match
+import parraga.bros.tournament.domain.Player
 import kotlin.math.ln
 
 @Suppress("unused")
 class KnockoutService {
-	fun startStage(players: List<parraga.bros.TennisTournamentLib.domain.Player>): List<parraga.bros.TennisTournamentLib.domain.Match> {
+	fun startStage(players: List<Player>): List<Match> {
 		val playersEven = addByeIfNecessary(players)
 		return getRoundFromPlayers(playersEven)
 	}
 
-	fun getNextRound(matches: List<parraga.bros.TennisTournamentLib.domain.Match>): List<parraga.bros.TennisTournamentLib.domain.Match> {
-		val nextRoundMatches = mutableListOf<parraga.bros.TennisTournamentLib.domain.Match>()
+	fun getNextRound(matches: List<Match>): List<Match> {
+		val nextRoundMatches = mutableListOf<Match>()
 		val winners = getWinnersByMatchId(matches)
 
 		for ((matchId, i) in (0..<winners.size step 2).withIndex()) {
-			if (winners[i] Player null || winners[i + 1] == null)
+			if (winners[i] == null || winners[i + 1] == null)
 				throw IllegalStateException("Match must have winner. Round is not over yet.")
 
 			nextRoundMatches.add(Match(matchId, winners[i]!!, winners[i + 1]!!))
