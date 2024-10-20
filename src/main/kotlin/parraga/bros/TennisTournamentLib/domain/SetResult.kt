@@ -1,4 +1,4 @@
-package domain
+package parraga.bros.TennisTournamentLib.domain
 
 sealed class SetResult {
     data class RegularSet(val player1Games: Int, val player2Games: Int) : SetResult()

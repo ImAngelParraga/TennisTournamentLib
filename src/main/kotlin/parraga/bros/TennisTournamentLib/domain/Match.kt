@@ -1,4 +1,4 @@
-package domain
+package parraga.bros.TennisTournamentLib.domain
 
 /**
  * @param matchId ID of the match for the round. Starts from 0. Winner of the match 0 will play against winner of
