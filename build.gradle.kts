@@ -1,11 +1,11 @@
 plugins {
     java
-    kotlin("jvm") version "2.0.20"
+    kotlin("jvm") version "2.0.21"
     `maven-publish`
 }
 
 group = "parraga.bros"
-version = "1.0"
+version = "0.0.1"
 
 repositories {
     mavenCentral()
@@ -23,7 +23,7 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             group = "parraga.bros"
-            version = "1.0"
+            version = "0.0.1"
             artifactId = "TennisTournamentLib"
 
             from(components["java"])
