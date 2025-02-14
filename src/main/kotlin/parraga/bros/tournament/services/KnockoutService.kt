@@ -1,74 +1,83 @@
 package parraga.bros.tournament.services
 
 import parraga.bros.tournament.domain.Match
-import parraga.bros.tournament.domain.Player
-import kotlin.math.ln
+import parraga.bros.tournament.domain.MatchDependency
+import parraga.bros.tournament.domain.MatchStatus
+import parraga.bros.tournament.domain.Outcome
+import kotlin.math.ceil
+import kotlin.math.log2
+import kotlin.math.pow
 
-@Suppress("unused")
-class KnockoutService {
-	fun startStage(players: List<Player>): List<Match> {
-		val playersEven = addByeIfNecessary(players)
-		return getRoundFromPlayers(playersEven)
-	}
+object KnockoutService {
+    fun startPhase(playerIds: List<Int>): List<Match> {
+        require(playerIds.size >= 2) { "Tournament must have at least 2 players" }
 
-	fun getNextRound(matches: List<Match>): List<Match> {
-		val nextRoundMatches = mutableListOf<Match>()
-		val winners = getWinnersByMatchId(matches)
+        val totalRounds = ceil(log2(playerIds.size.toDouble())).toInt()
+        val nextPowerOfTwo = 2.0.pow(totalRounds).toInt()
+        val numByes = nextPowerOfTwo - playerIds.size
 
-		for ((matchId, i) in (0..<winners.size step 2).withIndex()) {
-			if (winners[i] == null || winners[i + 1] == null)
-				throw IllegalStateException("Match must have winner. Round is not over yet.")
+        val allMatches = mutableListOf<Match>()
+        var matchId = 0
 
-			nextRoundMatches.add(Match(matchId, winners[i]!!, winners[i + 1]!!))
-		}
+        val firstRoundPlayers = playerIds.toMutableList()
+        repeat(numByes) { firstRoundPlayers.add(-1) }
 
-		return nextRoundMatches
-	}
+        val firstRoundMatches = firstRoundPlayers.shuffled().chunked(2) { pair ->
+            Match(
+                id = matchId++,
+                round = 1,
+                player1Id = pair.firstOrNull(),
+                player2Id = pair.getOrNull(1),
+                status = MatchStatus.SCHEDULED,
+                dependencies = emptyList()
+            )
+        }
+        allMatches.addAll(firstRoundMatches)
 
-	private fun getWinnersByMatchId(matches: List<Match>): Map<Int, Player> {
-		val winners = mutableMapOf<Int, Player>()
-		matches.forEach {
-			if (it.winner == null) throw IllegalStateException("Match must have winner. Round is not over yet.")
-			winners[it.matchId] = it.winner!!
-		}
+        var currentMatches = firstRoundMatches
 
-		return winners
-	}
+        for (currentRound in 2 until totalRounds) {
+            val nextRoundMatches = mutableListOf<Match>()
 
-	private fun getRoundFromPlayers(players: MutableList<Player>): List<Match> {
-		players.shuffle()
-		val matches = mutableListOf<Match>()
-		for ((matchId, i) in (players.indices step 2).withIndex()) {
-			matches.add(Match(matchId, players[i], players[i + 1]))
-		}
+            currentMatches.chunked(2) { parentMatches ->
+                val newMatch = Match(
+                    id = matchId++,
+                    round = currentRound,
+                    player1Id = null,
+                    player2Id = null,
+                    status = MatchStatus.SCHEDULED,
+                    dependencies = parentMatches.map {
+                        MatchDependency(it.id, Outcome.WINNER)
+                    }
+                )
+                nextRoundMatches.add(newMatch)
+            }
 
-		return matches
-	}
+            allMatches.addAll(nextRoundMatches)
+            currentMatches = nextRoundMatches
+        }
 
-	private fun addByeIfNecessary(players: List<Player>): MutableList<Player> {
-		val playersWithBye = players.toMutableList()
-		val nextPowerOfTwo = nextPowerOfTwo(players.size)
+        return allMatches
+    }
 
-		while (playersWithBye.size < nextPowerOfTwo) {
-			playersWithBye.add(createPlayerBye())
-		}
+    fun startNextRound(nextRoundMatches: List<Match>, previousRoundMatches: List<Match>): List<Match> {
+        if (previousRoundMatches.isEmpty()) return emptyList()
 
-		return playersWithBye
-	}
+        return nextRoundMatches.map { match ->
+            require(match.dependencies.size == 2) { "Each knockout match must have exactly 2 dependencies" }
 
-	private fun nextPowerOfTwo(number: Int): Int {
-		var power = 1
-		while (power < number) {
-			power *= 2
-		}
-		return power
-	}
+            val depMatches = match.dependencies.map { dependency ->
+                val depMatch = previousRoundMatches.find { it.id == dependency.requiredMatchId }
+                    ?: throw IllegalStateException("Dependent match ${dependency.requiredMatchId} not found")
 
+                require(depMatch.status == MatchStatus.COMPLETED && depMatch.winnerId != null) { "Match ${depMatch
+                    .id} is not completed or has no winner" }
 
-	private fun calculateTotalRounds(players: Int): Int {
-		require(players > 1 && players and (players - 1) == 0) { "Players number must be even" }
-		return (ln(players.toDouble()) / ln(2.0)).toInt()
-	}
+                depMatch
+            }
 
-	private fun createPlayerBye(): Player = Player(-1, "Bye")
+            match.setPlayerIdsByPreviousMatches(depMatches)
+            match
+        }
+    }
 }
