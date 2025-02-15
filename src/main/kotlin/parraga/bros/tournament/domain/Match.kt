@@ -10,7 +10,7 @@ data class Match(
     var winnerId: Int? = null,
     val score: TennisScore? = null,
     var status: MatchStatus,
-    val dependencies: List<MatchDependency>
+    val dependencies: List<MatchDependency> = emptyList()
 ) {
     fun setPlayerIdsByPreviousMatches(previousMatches: List<Match>) {
         dependencies.forEachIndexed { index, dependency ->

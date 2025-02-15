@@ -36,7 +36,7 @@ object KnockoutService : PhaseService {
 
         var currentMatches = firstRoundMatches
 
-        for (currentRound in 2 until totalRounds) {
+        for (currentRound in 2 .. totalRounds) {
             val nextRoundMatches = mutableListOf<Match>()
 
             currentMatches.chunked(2) { parentMatches ->
