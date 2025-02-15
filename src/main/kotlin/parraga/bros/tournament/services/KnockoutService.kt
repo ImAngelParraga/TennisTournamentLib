@@ -8,8 +8,8 @@ import kotlin.math.ceil
 import kotlin.math.log2
 import kotlin.math.pow
 
-object KnockoutService {
-    fun startPhase(playerIds: List<Int>): List<Match> {
+object KnockoutService : PhaseService {
+    override fun startPhase(playerIds: List<Int>): List<Match> {
         require(playerIds.size >= 2) { "Tournament must have at least 2 players" }
 
         val totalRounds = ceil(log2(playerIds.size.toDouble())).toInt()
@@ -60,7 +60,7 @@ object KnockoutService {
         return allMatches
     }
 
-    fun startNextRound(nextRoundMatches: List<Match>, previousRoundMatches: List<Match>): List<Match> {
+    override fun startNextRound(nextRoundMatches: List<Match>, previousRoundMatches: List<Match>): List<Match> {
         if (previousRoundMatches.isEmpty()) return emptyList()
 
         return nextRoundMatches.map { match ->
