@@ -19,22 +19,22 @@ object KnockoutService : PhaseService {
         val allMatches = mutableListOf<Match>()
         var matchId = 0
 
-        val firstRoundPlayers = playerIds.toMutableList()
-        repeat(numByes) { firstRoundPlayers.add(-1) }
-
-        val firstRoundMatches = firstRoundPlayers.shuffled().chunked(2) { pair ->
-            Match(
+        val playerPairs = groupPlayerIdsIntoPairs(playerIds, numByes)
+        playerPairs.forEach {
+            val newMatch = Match(
                 id = matchId++,
                 round = 1,
-                player1Id = pair.firstOrNull(),
-                player2Id = pair.getOrNull(1),
-                status = MatchStatus.SCHEDULED,
+                player1Id = it.first,
+                player2Id = it.second,
+                // Byes are always set for the second player
+                status = if (it.second == -1) MatchStatus.WALKOVER else MatchStatus.SCHEDULED,
                 dependencies = emptyList()
             )
-        }
-        allMatches.addAll(firstRoundMatches)
 
-        var currentMatches = firstRoundMatches
+            allMatches.add(newMatch)
+        }
+
+        var currentMatches = allMatches
 
         for (currentRound in 2 .. totalRounds) {
             val nextRoundMatches = mutableListOf<Match>()
@@ -79,5 +79,19 @@ object KnockoutService : PhaseService {
             match.setPlayerIdsByPreviousMatches(depMatches)
             match
         }
+    }
+
+    private fun groupPlayerIdsIntoPairs(playerIds: List<Int>, numByes: Int): List<Pair<Int, Int>> {
+        val shuffledPlayerIds = playerIds.shuffled()
+
+        val pairs = mutableListOf<Pair<Int, Int>>()
+        for (i in 0 until numByes) {
+            pairs.add(shuffledPlayerIds[i] to -1)
+        }
+
+        val remaining = shuffledPlayerIds.drop(numByes)
+        remaining.chunked(2) { pair -> pairs.add(pair[0] to pair[1]) }
+
+        return pairs.shuffled()
     }
 }

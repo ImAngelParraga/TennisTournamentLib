@@ -44,6 +44,23 @@ class KnockoutServiceTest {
         assertEquals(1, matches[0].round, "The match should belong to round 1")
     }
 
+    @Test
+    fun `startPhase with maximum possible byes does not create matches with both players as bye`() {
+        val players = (1..9).toList()
+        val matches = KnockoutService.startPhase(players)
+
+        val round1Matches = matches.filter { it.round == 1 }
+        assertTrue(round1Matches.isNotEmpty(), "No matches generated for round 1")
+
+        round1Matches.forEach { match ->
+            val bothByes = match.player1Id == -1 && match.player2Id == -1
+            assertTrue(!bothByes, "Match ${match.id} in round 1 has two byes (-1 vs -1)")
+        }
+
+        val round1MatchesWithBye = round1Matches.count { it.status == MatchStatus.WALKOVER }
+        assertTrue(round1MatchesWithBye == 7, "There should be 7 matches with byes in round 1")
+    }
+
     // ------------------------- Tests for startNextRound -------------------------
     @Test
     fun `startNextRound correctly assigns players when dependencies are completed`() {
