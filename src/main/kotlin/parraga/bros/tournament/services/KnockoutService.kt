@@ -27,7 +27,7 @@ object KnockoutService : PhaseService {
                 player1Id = it.first,
                 player2Id = it.second,
                 // Byes are always set for the second player
-                status = if (it.second == -1) MatchStatus.WALKOVER else MatchStatus.SCHEDULED,
+                status = if (it.second == null) MatchStatus.WALKOVER else MatchStatus.SCHEDULED,
                 dependencies = emptyList()
             )
 
@@ -81,12 +81,12 @@ object KnockoutService : PhaseService {
         }
     }
 
-    private fun groupPlayerIdsIntoPairs(playerIds: List<Int>, numByes: Int): List<Pair<Int, Int>> {
+    private fun groupPlayerIdsIntoPairs(playerIds: List<Int>, numByes: Int): List<Pair<Int, Int?>> {
         val shuffledPlayerIds = playerIds.shuffled()
 
-        val pairs = mutableListOf<Pair<Int, Int>>()
+        val pairs = mutableListOf<Pair<Int, Int?>>()
         for (i in 0 until numByes) {
-            pairs.add(shuffledPlayerIds[i] to -1)
+            pairs.add(shuffledPlayerIds[i] to null)
         }
 
         val remaining = shuffledPlayerIds.drop(numByes)
