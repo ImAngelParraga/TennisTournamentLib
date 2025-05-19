@@ -178,11 +178,11 @@ class GroupServiceTest {
                     matchesInRound.forEach { match ->
                         assertFalse(playersInRound.contains(match.player1Id),
                             "Player ${match.player1Id} plays multiple times in round $round of group $groupId")
-                        playersInRound.add(match.player1Id!!)
+                        match.player1Id?.let { playersInRound.add(it) }
 
                         assertFalse(playersInRound.contains(match.player2Id),
                             "Player ${match.player2Id} plays multiple times in round $round of group $groupId")
-                        playersInRound.add(match.player2Id!!)
+                        match.player2Id?.let { playersInRound.add(it) }
                     }
 
                     // Each round should have exactly half the players playing
