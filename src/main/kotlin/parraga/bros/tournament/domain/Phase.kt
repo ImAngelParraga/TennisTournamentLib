@@ -16,9 +16,9 @@ sealed interface PhaseConfiguration {
     ) : PhaseConfiguration
     
     data class GroupConfig(
-        val groupCount: Int,
-        val teamsPerGroup: Int,
-        val advancingPerGroup: Int
+        val groupCount: Int? = null,
+        val playersPerGroup: Int? = null,
+        val totalAdvancingPlayers: Int? = null
     ) : PhaseConfiguration
 
     data class SwissConfig(

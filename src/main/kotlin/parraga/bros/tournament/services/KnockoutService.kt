@@ -4,12 +4,13 @@ import parraga.bros.tournament.domain.Match
 import parraga.bros.tournament.domain.MatchDependency
 import parraga.bros.tournament.domain.MatchStatus
 import parraga.bros.tournament.domain.Outcome
+import parraga.bros.tournament.domain.Phase
 import kotlin.math.ceil
 import kotlin.math.log2
 import kotlin.math.pow
 
 object KnockoutService : PhaseService {
-    override fun startPhase(playerIds: List<Int>): List<Match> {
+    override fun startPhase(phase: Phase, playerIds: List<Int>): List<Match> {
         require(playerIds.size >= 2) { "Tournament must have at least 2 players" }
 
         val totalRounds = ceil(log2(playerIds.size.toDouble())).toInt()

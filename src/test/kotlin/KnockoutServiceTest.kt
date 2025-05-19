@@ -4,10 +4,13 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import parraga.bros.tournament.domain.Format
 import parraga.bros.tournament.domain.Match
 import parraga.bros.tournament.domain.MatchDependency
 import parraga.bros.tournament.domain.MatchStatus
 import parraga.bros.tournament.domain.Outcome
+import parraga.bros.tournament.domain.Phase
+import parraga.bros.tournament.domain.PhaseConfiguration.KnockoutConfig
 
 class KnockoutServiceTest {
 
@@ -15,7 +18,8 @@ class KnockoutServiceTest {
     @Test
     fun `startPhase with 4 players generates semifinals and final matches`() {
         val players = listOf(1, 2, 3, 4)
-        val matches = KnockoutService.startPhase(players)
+        val phase = createPhase()
+        val matches = KnockoutService.startPhase(phase,players)
 
         assertEquals(2, matches.count { it.round == 1 }, "Round 1 (semifinals) should have 2 matches")
         assertEquals(1, matches.count { it.round == 2 }, "Round 2 (final) should have 1 match")
@@ -25,7 +29,8 @@ class KnockoutServiceTest {
     @Test
     fun `startPhase with 5 players adds byes and generates rounds 1, 2, and 3`() {
         val players = listOf(1, 2, 3, 4, 5)
-        val matches = KnockoutService.startPhase(players)
+        val phase = createPhase()
+        val matches = KnockoutService.startPhase(phase,players)
 
         // 8 players (5 real + 3 byes).
         // Round 1: 4 matches, Round 2: 2 matches, Round 3: 1 match
@@ -38,7 +43,8 @@ class KnockoutServiceTest {
     @Test
     fun `startPhase with 2 players generates 1 match in round 1`() {
         val players = listOf(1, 2)
-        val matches = KnockoutService.startPhase(players)
+        val phase = createPhase()
+        val matches = KnockoutService.startPhase(phase,players)
 
         assertEquals(1, matches.size, "There should be exactly 1 match in round 1")
         assertEquals(1, matches[0].round, "The match should belong to round 1")
@@ -47,7 +53,8 @@ class KnockoutServiceTest {
     @Test
     fun `startPhase with maximum possible byes does not create matches with both players as bye`() {
         val players = (1..9).toList()
-        val matches = KnockoutService.startPhase(players)
+        val phase = createPhase()
+        val matches = KnockoutService.startPhase(phase, players)
 
         val round1Matches = matches.filter { it.round == 1 }
         assertTrue(round1Matches.isNotEmpty(), "No matches generated for round 1")
@@ -161,5 +168,21 @@ class KnockoutServiceTest {
         }
 
         assertTrue(exception.message!!.contains("Each knockout match must have exactly 2 dependencies"))
+    }
+
+    private fun createPhase(
+        order: Int = 1,
+        rounds: Int = 3,
+        thirdPlacePlayoff: Boolean = false
+    ): Phase {
+        return Phase(
+            order = order,
+            format = Format.KNOCKOUT,
+            rounds = rounds,
+            configuration = KnockoutConfig(
+                thirdPlacePlayoff = thirdPlacePlayoff
+            ),
+            matches = emptyList()
+        )
     }
 }

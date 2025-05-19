@@ -8,9 +8,9 @@ import parraga.bros.tournament.domain.Phase
 object TournamentService {
 
     fun startPhase(phase: Phase, playerIds: List<Int>) = when (phase.format) {
-        Format.GROUP -> GroupService.startPhase(playerIds)
-        Format.SWISS -> SwissService.startPhase(playerIds)
-        Format.KNOCKOUT -> KnockoutService.startPhase(playerIds)
+        Format.GROUP -> GroupService.startPhase(phase, playerIds)
+        Format.SWISS -> SwissService.startPhase(phase, playerIds)
+        Format.KNOCKOUT -> KnockoutService.startPhase(phase, playerIds)
     }
 
     fun startNextRound(phase: Phase): List<Match> {

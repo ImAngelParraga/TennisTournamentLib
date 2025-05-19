@@ -1,9 +1,10 @@
 package parraga.bros.tournament.services
 
 import parraga.bros.tournament.domain.Match
+import parraga.bros.tournament.domain.Phase
 
 object SwissService : PhaseService {
-    override fun startPhase(playerIds: List<Int>): List<Match> {
+    override fun startPhase(phase: Phase, playerIds: List<Int>): List<Match> {
         TODO()
     }
 
