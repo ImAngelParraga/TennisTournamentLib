@@ -26,6 +26,7 @@ object KnockoutService : PhaseService {
                 round = 1,
                 player1Id = it.first,
                 player2Id = it.second,
+                winnerId = if (it.second == null) it.first else null,
                 // Byes are always set for the second player
                 status = if (it.second == null) MatchStatus.WALKOVER else MatchStatus.SCHEDULED,
                 dependencies = emptyList()

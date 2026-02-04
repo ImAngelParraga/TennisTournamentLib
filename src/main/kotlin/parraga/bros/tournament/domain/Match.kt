@@ -18,8 +18,10 @@ data class Match(
                 it.id == dependency.requiredMatchId
             }
 
-            require(match != null) { "Previous matches don't contain required match id " +
-                    "[${dependency.requiredMatchId}] from this match (id: $id) dependencies." }
+            require(match != null) {
+                "Previous matches don't contain required match id " +
+                        "[${dependency.requiredMatchId}] from this match (id: $id) dependencies."
+            }
             require(match.status == MatchStatus.COMPLETED) { "Match [${match.id} is not completed." }
             require(match.winnerId != null) { "WinnerId for match ${match.id} is null when match is completed." }
             require(match.player1Id != null) { "Player1 id is null." }
@@ -27,7 +29,7 @@ data class Match(
 
             val playerFromOutcome = when (dependency.requiredOutcome) {
                 Outcome.WINNER -> match.winnerId
-                Outcome.LOSER -> if (match.player1Id == match.winnerId) player2Id!! else player1Id!!
+                Outcome.LOSER -> if (match.player1Id == match.winnerId) match.player2Id else match.player1Id
             }
 
             if (index == 0) {
@@ -42,7 +44,30 @@ data class Match(
 
 data class TennisScore(
     val sets: List<SetScore>
-)
+) {
+    fun calculateWinnerId(player1Id: Int, player2Id: Int): Int? {
+        var p1Sets = 0
+        var p2Sets = 0
+
+        sets.forEach { set ->
+            when {
+                set.player1Games > set.player2Games -> p1Sets++
+                set.player2Games > set.player1Games -> p2Sets++
+                // Tiebreak logic
+                set.tiebreak != null -> {
+                    if (set.tiebreak.player1Points > set.tiebreak.player2Points) p1Sets++
+                    else p2Sets++
+                }
+            }
+        }
+
+        return when {
+            p1Sets > p2Sets -> player1Id
+            p2Sets > p1Sets -> player2Id
+            else -> null
+        }
+    }
+}
 
 data class SetScore(
     val player1Games: Int,
