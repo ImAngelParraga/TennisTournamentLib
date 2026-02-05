@@ -12,7 +12,8 @@ enum class Format { KNOCKOUT, GROUP, SWISS }
 
 sealed interface PhaseConfiguration {
     data class KnockoutConfig(
-        val thirdPlacePlayoff: Boolean
+        val thirdPlacePlayoff: Boolean,
+        val qualifiers: Int = 1
     ) : PhaseConfiguration
     
     data class GroupConfig(

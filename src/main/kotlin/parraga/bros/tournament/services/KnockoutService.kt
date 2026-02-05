@@ -9,10 +9,15 @@ import kotlin.math.log2
 import kotlin.math.pow
 
 object KnockoutService : PhaseService {
-    override fun startPhase(playerIds: List<Int>): List<Match> {
+    override fun startPhase(playerIds: List<Int>): List<Match> = startPhase(playerIds, qualifiers = 1)
+
+    fun startPhase(playerIds: List<Int>, qualifiers: Int): List<Match> {
         require(playerIds.size >= 2) { "Tournament must have at least 2 players" }
 
         val totalRounds = ceil(log2(playerIds.size.toDouble())).toInt()
+        val roundsToPlay = computeRounds(playerIds.size, qualifiers)
+        if (roundsToPlay == 0) return emptyList()
+
         val nextPowerOfTwo = 2.0.pow(totalRounds).toInt()
         val numByes = nextPowerOfTwo - playerIds.size
 
@@ -37,7 +42,7 @@ object KnockoutService : PhaseService {
 
         var currentMatches = allMatches
 
-        for (currentRound in 2 .. totalRounds) {
+        for (currentRound in 2 .. roundsToPlay) {
             val nextRoundMatches = mutableListOf<Match>()
 
             currentMatches.chunked(2) { parentMatches ->
@@ -71,7 +76,8 @@ object KnockoutService : PhaseService {
                 val depMatch = previousRoundMatches.find { it.id == dependency.requiredMatchId }
                     ?: throw IllegalStateException("Dependent match ${dependency.requiredMatchId} not found")
 
-                require(depMatch.status == MatchStatus.COMPLETED && depMatch.winnerId != null) { "Match ${depMatch
+                val isFinished = depMatch.status == MatchStatus.COMPLETED || depMatch.status == MatchStatus.WALKOVER
+                require(isFinished && depMatch.winnerId != null) { "Match ${depMatch
                     .id} is not completed or has no winner" }
 
                 depMatch
@@ -95,4 +101,16 @@ object KnockoutService : PhaseService {
 
         return pairs.shuffled()
     }
+
+    fun computeRounds(playerCount: Int, qualifiers: Int): Int {
+        require(qualifiers >= 1) { "Qualifiers must be at least 1" }
+        require(qualifiers <= playerCount) { "Qualifiers ($qualifiers) cannot exceed player count ($playerCount)" }
+        require(isPowerOfTwo(qualifiers)) { "Qualifiers ($qualifiers) must be a power of two" }
+
+        val totalRounds = ceil(log2(playerCount.toDouble())).toInt()
+        val qualifierRounds = log2(qualifiers.toDouble()).toInt()
+        return (totalRounds - qualifierRounds).coerceAtLeast(0)
+    }
+
+    private fun isPowerOfTwo(value: Int): Boolean = value > 0 && (value and (value - 1)) == 0
 }

@@ -4,13 +4,18 @@ import parraga.bros.tournament.domain.Format
 import parraga.bros.tournament.domain.Match
 import parraga.bros.tournament.domain.MatchStatus
 import parraga.bros.tournament.domain.Phase
+import parraga.bros.tournament.domain.PhaseConfiguration
 
 object TournamentService {
 
     fun startPhase(phase: Phase, playerIds: List<Int>) = when (phase.format) {
         Format.GROUP -> GroupService.startPhase(playerIds)
         Format.SWISS -> SwissService.startPhase(playerIds)
-        Format.KNOCKOUT -> KnockoutService.startPhase(playerIds)
+        Format.KNOCKOUT -> {
+            val config = phase.configuration as? PhaseConfiguration.KnockoutConfig
+                ?: throw IllegalArgumentException("Knockout phase requires KnockoutConfig configuration")
+            KnockoutService.startPhase(playerIds, config.qualifiers)
+        }
     }
 
     fun startNextRound(phase: Phase): List<Match> {

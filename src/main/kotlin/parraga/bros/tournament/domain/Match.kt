@@ -8,10 +8,21 @@ data class Match(
     var player1Id: Int? = null,
     var player2Id: Int? = null,
     var winnerId: Int? = null,
-    val score: TennisScore? = null,
+    var score: TennisScore? = null,
     var status: MatchStatus,
     val dependencies: List<MatchDependency> = emptyList()
 ) {
+    fun applyScore(score: TennisScore) {
+        val p1Id = requireNotNull(player1Id) { "Player1 id is null." }
+        val p2Id = requireNotNull(player2Id) { "Player2 id is null." }
+        val winner = score.calculateWinnerId(p1Id, p2Id)
+            ?: throw IllegalArgumentException("Score does not produce a winner.")
+
+        this.score = score
+        this.winnerId = winner
+        this.status = MatchStatus.COMPLETED
+    }
+
     fun setPlayerIdsByPreviousMatches(previousMatches: List<Match>) {
         dependencies.forEachIndexed { index, dependency ->
             val match = previousMatches.find {
@@ -22,7 +33,8 @@ data class Match(
                 "Previous matches don't contain required match id " +
                         "[${dependency.requiredMatchId}] from this match (id: $id) dependencies."
             }
-            require(match.status == MatchStatus.COMPLETED) { "Match [${match.id} is not completed." }
+            val isFinished = match.status == MatchStatus.COMPLETED || match.status == MatchStatus.WALKOVER
+            require(isFinished) { "Match [${match.id}] is not completed." }
             require(match.winnerId != null) { "WinnerId for match ${match.id} is null when match is completed." }
             require(match.player1Id != null) { "Player1 id is null." }
             require(match.player2Id != null) { "Player2 id is null." }

@@ -45,6 +45,24 @@ class KnockoutServiceTest {
     }
 
     @Test
+    fun `startPhase with qualifiers generates only required rounds`() {
+        val players = listOf(1, 2, 3, 4, 5, 6, 7, 8)
+        val matches = KnockoutService.startPhase(players, qualifiers = 4)
+
+        assertEquals(4, matches.count { it.round == 1 }, "Round 1 should have 4 matches")
+        assertEquals(0, matches.count { it.round == 2 }, "Round 2 should not be generated when qualifiers is 4")
+        assertEquals(4, matches.size, "Total matches should equal only round 1")
+    }
+
+    @Test
+    fun `startPhase returns empty list when qualifiers equals player count`() {
+        val players = listOf(1, 2, 3, 4, 5, 6, 7, 8)
+        val matches = KnockoutService.startPhase(players, qualifiers = 8)
+
+        assertTrue(matches.isEmpty(), "No matches should be generated when all players qualify")
+    }
+
+    @Test
     fun `startPhase with maximum possible byes does not create matches with both players as bye`() {
         val players = (1..9).toList()
         val matches = KnockoutService.startPhase(players)
