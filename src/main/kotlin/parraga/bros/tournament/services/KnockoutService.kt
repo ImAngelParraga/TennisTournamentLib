@@ -9,10 +9,15 @@ import kotlin.math.log2
 import kotlin.math.pow
 
 object KnockoutService : PhaseService {
-    override fun startPhase(playerIds: List<Int>): List<Match> = startPhase(playerIds, qualifiers = 1)
+    override fun startPhase(playerIds: List<Int>): List<Match> =
+        startPhase(playerIds, qualifiers = 1, thirdPlacePlayoff = false)
 
-    fun startPhase(playerIds: List<Int>, qualifiers: Int): List<Match> {
+    fun startPhase(playerIds: List<Int>, qualifiers: Int, thirdPlacePlayoff: Boolean = false): List<Match> {
         require(playerIds.size >= 2) { "Tournament must have at least 2 players" }
+        if (thirdPlacePlayoff) {
+            require(qualifiers == 1) { "Third-place playoff requires qualifiers to be 1" }
+            require(playerIds.size >= 4) { "Third-place playoff requires at least 4 players" }
+        }
 
         val totalRounds = ceil(log2(playerIds.size.toDouble())).toInt()
         val roundsToPlay = computeRounds(playerIds.size, qualifiers)
@@ -61,6 +66,22 @@ object KnockoutService : PhaseService {
 
             allMatches.addAll(nextRoundMatches)
             currentMatches = nextRoundMatches
+        }
+
+        if (thirdPlacePlayoff) {
+            val semifinalRound = roundsToPlay - 1
+            val semifinalMatches = allMatches.filter { it.round == semifinalRound }
+            require(semifinalMatches.size == 2) { "Third-place playoff requires exactly 2 semifinal matches" }
+
+            val thirdPlaceMatch = Match(
+                id = matchId++,
+                round = roundsToPlay,
+                player1Id = null,
+                player2Id = null,
+                status = MatchStatus.SCHEDULED,
+                dependencies = semifinalMatches.map { MatchDependency(it.id, Outcome.LOSER) }
+            )
+            allMatches.add(thirdPlaceMatch)
         }
 
         return allMatches

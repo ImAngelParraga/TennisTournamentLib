@@ -63,6 +63,34 @@ class KnockoutServiceTest {
     }
 
     @Test
+    fun `startPhase with third place creates extra match with loser dependencies`() {
+        val players = listOf(1, 2, 3, 4)
+        val matches = KnockoutService.startPhase(players, qualifiers = 1, thirdPlacePlayoff = true)
+
+        assertEquals(4, matches.size, "Should include 3 standard matches plus third-place match")
+
+        val finalRound = matches.maxOf { it.round }
+        val finalRoundMatches = matches.filter { it.round == finalRound }
+        assertEquals(2, finalRoundMatches.size, "Final round should have final and third-place match")
+
+        val thirdPlace = finalRoundMatches.firstOrNull { match ->
+            match.dependencies.all { it.requiredOutcome == Outcome.LOSER }
+        }
+        assertTrue(thirdPlace != null, "Third-place match should depend on losers")
+    }
+
+    @Test
+    fun `startPhase with third place rejects qualifiers greater than 1`() {
+        val players = listOf(1, 2, 3, 4, 5, 6, 7, 8)
+
+        val exception = assertThrows<IllegalArgumentException> {
+            KnockoutService.startPhase(players, qualifiers = 4, thirdPlacePlayoff = true)
+        }
+
+        assertTrue(exception.message!!.contains("Third-place playoff requires qualifiers to be 1"))
+    }
+
+    @Test
     fun `startPhase with maximum possible byes does not create matches with both players as bye`() {
         val players = (1..9).toList()
         val matches = KnockoutService.startPhase(players)
