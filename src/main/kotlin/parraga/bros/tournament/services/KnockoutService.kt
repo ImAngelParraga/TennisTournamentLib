@@ -4,15 +4,26 @@ import parraga.bros.tournament.domain.Match
 import parraga.bros.tournament.domain.MatchDependency
 import parraga.bros.tournament.domain.MatchStatus
 import parraga.bros.tournament.domain.Outcome
+import parraga.bros.tournament.domain.SeedingStrategy
 import kotlin.math.ceil
 import kotlin.math.log2
 import kotlin.math.pow
 
 object KnockoutService : PhaseService {
     override fun startPhase(playerIds: List<Int>): List<Match> =
-        startPhase(playerIds, qualifiers = 1, thirdPlacePlayoff = false)
+        startPhase(
+            playerIds = playerIds,
+            qualifiers = 1,
+            thirdPlacePlayoff = false,
+            seedingStrategy = SeedingStrategy.INPUT_ORDER
+        )
 
-    fun startPhase(playerIds: List<Int>, qualifiers: Int, thirdPlacePlayoff: Boolean = false): List<Match> {
+    fun startPhase(
+        playerIds: List<Int>,
+        qualifiers: Int,
+        thirdPlacePlayoff: Boolean = false,
+        seedingStrategy: SeedingStrategy = SeedingStrategy.INPUT_ORDER
+    ): List<Match> {
         require(playerIds.size >= 2) { "Tournament must have at least 2 players" }
         if (thirdPlacePlayoff) {
             require(qualifiers == 1) { "Third-place playoff requires qualifiers to be 1" }
@@ -29,7 +40,7 @@ object KnockoutService : PhaseService {
         val allMatches = mutableListOf<Match>()
         var matchId = 0
 
-        val playerPairs = groupPlayerIdsIntoPairs(playerIds, numByes)
+        val playerPairs = groupPlayerIdsIntoPairs(playerIds, numByes, seedingStrategy)
         playerPairs.forEach {
             val newMatch = Match(
                 id = matchId++,
@@ -109,18 +120,28 @@ object KnockoutService : PhaseService {
         }
     }
 
-    private fun groupPlayerIdsIntoPairs(playerIds: List<Int>, numByes: Int): List<Pair<Int, Int?>> {
-        val shuffledPlayerIds = playerIds.shuffled()
+    private fun groupPlayerIdsIntoPairs(
+        playerIds: List<Int>,
+        numByes: Int,
+        seedingStrategy: SeedingStrategy
+    ): List<Pair<Int, Int?>> {
+        val seededPlayerIds = when (seedingStrategy) {
+            SeedingStrategy.INPUT_ORDER -> playerIds
+            SeedingStrategy.RANDOM -> playerIds.shuffled()
+        }
 
         val pairs = mutableListOf<Pair<Int, Int?>>()
         for (i in 0 until numByes) {
-            pairs.add(shuffledPlayerIds[i] to null)
+            pairs.add(seededPlayerIds[i] to null)
         }
 
-        val remaining = shuffledPlayerIds.drop(numByes)
+        val remaining = seededPlayerIds.drop(numByes)
         remaining.chunked(2) { pair -> pairs.add(pair[0] to pair[1]) }
 
-        return pairs.shuffled()
+        return when (seedingStrategy) {
+            SeedingStrategy.INPUT_ORDER -> pairs
+            SeedingStrategy.RANDOM -> pairs.shuffled()
+        }
     }
 
     fun computeRounds(playerCount: Int, qualifiers: Int): Int {

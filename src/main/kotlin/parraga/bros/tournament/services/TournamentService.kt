@@ -14,7 +14,12 @@ object TournamentService {
         Format.KNOCKOUT -> {
             val config = phase.configuration as? PhaseConfiguration.KnockoutConfig
                 ?: throw IllegalArgumentException("Knockout phase requires KnockoutConfig configuration")
-            KnockoutService.startPhase(playerIds, config.qualifiers, config.thirdPlacePlayoff)
+            KnockoutService.startPhase(
+                playerIds = playerIds,
+                qualifiers = config.qualifiers,
+                thirdPlacePlayoff = config.thirdPlacePlayoff,
+                seedingStrategy = config.seedingStrategy
+            )
         }
     }
 

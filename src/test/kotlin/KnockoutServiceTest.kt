@@ -8,6 +8,7 @@ import parraga.bros.tournament.domain.Match
 import parraga.bros.tournament.domain.MatchDependency
 import parraga.bros.tournament.domain.MatchStatus
 import parraga.bros.tournament.domain.Outcome
+import parraga.bros.tournament.domain.SeedingStrategy
 
 class KnockoutServiceTest {
 
@@ -42,6 +43,57 @@ class KnockoutServiceTest {
 
         assertEquals(1, matches.size, "There should be exactly 1 match in round 1")
         assertEquals(1, matches[0].round, "The match should belong to round 1")
+    }
+
+    @Test
+    fun `startPhase uses input order seeding by default`() {
+        val players = listOf(10, 20, 30, 40)
+
+        val matches = KnockoutService.startPhase(players)
+        val round1Matches = matches.filter { it.round == 1 }.sortedBy { it.id }
+
+        assertEquals(2, round1Matches.size)
+        assertEquals(10, round1Matches[0].player1Id)
+        assertEquals(20, round1Matches[0].player2Id)
+        assertEquals(30, round1Matches[1].player1Id)
+        assertEquals(40, round1Matches[1].player2Id)
+    }
+
+    @Test
+    fun `startPhase with input order seeding assigns byes to first players`() {
+        val players = listOf(1, 2, 3, 4, 5)
+
+        val matches = KnockoutService.startPhase(
+            playerIds = players,
+            qualifiers = 1,
+            thirdPlacePlayoff = false,
+            seedingStrategy = SeedingStrategy.INPUT_ORDER
+        )
+
+        val round1Matches = matches.filter { it.round == 1 }.sortedBy { it.id }
+        val byeMatches = round1Matches.filter { it.player2Id == null }
+
+        assertEquals(3, byeMatches.size, "Expected three byes for 5 players in an 8-slot bracket")
+        assertEquals(listOf(1, 2, 3), byeMatches.mapNotNull { it.player1Id }, "Byes should be assigned to first seeds")
+    }
+
+    @Test
+    fun `startPhase with random seeding still assigns each player exactly once in round 1`() {
+        val players = (1..8).toList()
+
+        val matches = KnockoutService.startPhase(
+            playerIds = players,
+            qualifiers = 1,
+            thirdPlacePlayoff = false,
+            seedingStrategy = SeedingStrategy.RANDOM
+        )
+
+        val round1Matches = matches.filter { it.round == 1 }
+        val assignedPlayers = round1Matches
+            .flatMap { listOfNotNull(it.player1Id, it.player2Id) }
+            .toSet()
+
+        assertEquals(players.toSet(), assignedPlayers)
     }
 
     @Test
@@ -99,8 +151,8 @@ class KnockoutServiceTest {
         assertTrue(round1Matches.isNotEmpty(), "No matches generated for round 1")
 
         round1Matches.forEach { match ->
-            val bothByes = match.player1Id == -1 && match.player2Id == -1
-            assertTrue(!bothByes, "Match ${match.id} in round 1 has two byes (-1 vs -1)")
+            val bothByes = match.player1Id == null && match.player2Id == null
+            assertTrue(!bothByes, "Match ${match.id} in round 1 has two byes (null vs null)")
         }
 
         val round1MatchesWithBye = round1Matches.count { it.status == MatchStatus.WALKOVER }

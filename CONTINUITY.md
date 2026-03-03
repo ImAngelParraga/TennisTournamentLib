@@ -12,8 +12,12 @@ Include: branch, uncommitted state, what changed, and compatibility impact on ba
 - Local state currently includes user-side pending files:
   - staged: `.aiignore`
   - untracked: `SESSION_HANDOFF.md`
+- Local implementation changes (not committed yet):
+  - modified: `Phase.kt`, `KnockoutService.kt`, `TournamentService.kt`, `KnockoutServiceTest.kt`
 
 ## Recent Completed Work
+- Unreleased local change: add configurable knockout seeding strategy with deterministic default.
+- Unreleased local change: fix stale `-1` bye assertion and extend seeding tests.
 - `dd3a556` Add third-place playoff bracket support
 - `ef95218` Add qualifiers and scoring helpers
 - `a62eccf` Fix knockout loser selection and bye winners
@@ -22,6 +26,9 @@ Include: branch, uncommitted state, what changed, and compatibility impact on ba
 
 ## Current Functional Baseline
 - Knockout bracket generation is implemented.
+- Knockout seeding supports:
+  - deterministic input-order seeding (default),
+  - optional randomized seeding.
 - Qualifier-aware round computation exists (`computeRounds`).
 - Third-place playoff generation is supported (with constraints).
 - Match score application exists (`Match.applyScore`).
@@ -29,7 +36,6 @@ Include: branch, uncommitted state, what changed, and compatibility impact on ba
 ## Known Gaps
 - `GroupService` remains TODO.
 - `SwissService` remains TODO.
-- Deterministic seeding strategy is not implemented (currently randomized/shuffled).
 - Additional scoring/domain validation depth is still limited.
 
 ## Integration Notes (Backend)
@@ -46,6 +52,6 @@ Include: branch, uncommitted state, what changed, and compatibility impact on ba
   - run `./gradlew --stop` before retrying.
 
 ## Next Suggested Actions
-1. Define and implement deterministic seeding API/behavior.
-2. Decide product direction for Group/Swiss (implement or remove from public contract for now).
-3. Expand test coverage for edge-case scoring and progression invariants.
+1. Decide product direction for Group/Swiss (implement or remove from public contract for now).
+2. Expand test coverage for edge-case scoring and progression invariants.
+3. If backend should expose seeding choice, wire `KnockoutConfig.seedingStrategy` through backend API/DTO layer.
