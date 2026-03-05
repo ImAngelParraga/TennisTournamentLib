@@ -10,16 +10,16 @@ Include: branch, uncommitted state, what changed, and compatibility impact on ba
 ## Current State
 - Branch: `master`
 - Local implementation changes (not committed yet):
-  - modified: `KnockoutService.kt`, `TournamentService.kt`, `KnockoutServiceTest.kt`, `CONTINUITY.md`
-  - untracked: `SeededParticipant.kt`
+  - added: `AGENTS.md`, `AI_CONTEXT.md`
+  - modified: `CONTINUITY.md`
 
 ## Recent Completed Work
-- Unreleased local change: generalized seed model to `SeededParticipant` for cross-format API use.
-- Unreleased local change: added participant-based API `startPhaseWithParticipants` and wired it for
-  Group/Swiss (currently seed ignored there) and Knockout (seed-aware).
-- Unreleased local change: add `PARTIAL_SEEDED` mode with `seededPlayerCount` and validation.
-- Unreleased local change: add configurable knockout seeding strategy with deterministic default.
-- Unreleased local change: fix stale `-1` bye assertion and extend seeding tests.
+- (uncommitted in current session) Added AI operating docs:
+  - `AGENTS.md` with workflow rules
+  - `AI_CONTEXT.md` for fast onboarding and cross-repo awareness
+- `d2b1747` Refactor seeding model to `SeededParticipant` for cross-format usage
+- `804c298` Add partial seeded seeding mode
+- `5bdced5` Add deterministic seeding strategy
 - `dd3a556` Add third-place playoff bracket support
 - `ef95218` Add qualifiers and scoring helpers
 - `a62eccf` Fix knockout loser selection and bye winners
