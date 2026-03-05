@@ -97,6 +97,87 @@ class KnockoutServiceTest {
     }
 
     @Test
+    fun `startPhase with partial seeding keeps top seeds fixed and randomizes remaining opponents`() {
+        val players = (1..8).toList()
+        val seeded = setOf(1, 2)
+
+        val matches = KnockoutService.startPhase(
+            playerIds = players,
+            qualifiers = 1,
+            thirdPlacePlayoff = false,
+            seedingStrategy = SeedingStrategy.PARTIAL_SEEDED,
+            seededPlayerCount = 2
+        )
+
+        val round1Matches = matches.filter { it.round == 1 }
+        val seededMatches = round1Matches.filter { it.player1Id in seeded || it.player2Id in seeded }
+        assertEquals(2, seededMatches.size)
+        seededMatches.forEach { match ->
+            val bothSeeded = match.player1Id in seeded && match.player2Id in seeded
+            assertTrue(!bothSeeded, "Seeded players should not face each other in round 1 when unseeded opponents exist")
+        }
+
+        val assignedPlayers = round1Matches
+            .flatMap { listOfNotNull(it.player1Id, it.player2Id) }
+            .toSet()
+        assertEquals(players.toSet(), assignedPlayers)
+    }
+
+    @Test
+    fun `startPhase with partial seeding assigns byes to top seeds first`() {
+        val players = listOf(1, 2, 3, 4, 5)
+
+        val matches = KnockoutService.startPhase(
+            playerIds = players,
+            qualifiers = 1,
+            thirdPlacePlayoff = false,
+            seedingStrategy = SeedingStrategy.PARTIAL_SEEDED,
+            seededPlayerCount = 2
+        )
+
+        val round1Matches = matches.filter { it.round == 1 }
+        val byeMatches = round1Matches.filter { it.player2Id == null }
+        val byeRecipients = byeMatches.mapNotNull { it.player1Id }.toSet()
+
+        assertEquals(3, byeMatches.size)
+        assertTrue(1 in byeRecipients)
+        assertTrue(2 in byeRecipients)
+    }
+
+    @Test
+    fun `startPhase with partial seeding rejects missing seeded count`() {
+        val players = (1..8).toList()
+
+        val exception = assertThrows<IllegalArgumentException> {
+            KnockoutService.startPhase(
+                playerIds = players,
+                qualifiers = 1,
+                thirdPlacePlayoff = false,
+                seedingStrategy = SeedingStrategy.PARTIAL_SEEDED
+            )
+        }
+
+        assertTrue(exception.message!!.contains("seededPlayerCount"))
+    }
+
+    @Test
+    fun `startPhase rejects seeded count when strategy is not partial`() {
+        val players = (1..8).toList()
+
+        val exception = assertThrows<IllegalArgumentException> {
+            KnockoutService.startPhase(
+                playerIds = players,
+                qualifiers = 1,
+                thirdPlacePlayoff = false,
+                seedingStrategy = SeedingStrategy.INPUT_ORDER,
+                seededPlayerCount = 2
+            )
+        }
+
+        assertTrue(exception.message!!.contains("seededPlayerCount is only supported"))
+    }
+
+    @Test
     fun `startPhase with qualifiers generates only required rounds`() {
         val players = listOf(1, 2, 3, 4, 5, 6, 7, 8)
         val matches = KnockoutService.startPhase(players, qualifiers = 4)

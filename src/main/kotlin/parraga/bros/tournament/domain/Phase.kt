@@ -14,7 +14,8 @@ sealed interface PhaseConfiguration {
     data class KnockoutConfig(
         val thirdPlacePlayoff: Boolean,
         val qualifiers: Int = 1,
-        val seedingStrategy: SeedingStrategy = SeedingStrategy.INPUT_ORDER
+        val seedingStrategy: SeedingStrategy = SeedingStrategy.INPUT_ORDER,
+        val seededPlayerCount: Int = 0
     ) : PhaseConfiguration
     
     data class GroupConfig(
@@ -30,5 +31,6 @@ sealed interface PhaseConfiguration {
 
 enum class SeedingStrategy {
     INPUT_ORDER,
-    RANDOM
+    RANDOM,
+    PARTIAL_SEEDED
 }

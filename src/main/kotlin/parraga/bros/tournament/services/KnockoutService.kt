@@ -15,19 +15,34 @@ object KnockoutService : PhaseService {
             playerIds = playerIds,
             qualifiers = 1,
             thirdPlacePlayoff = false,
-            seedingStrategy = SeedingStrategy.INPUT_ORDER
+            seedingStrategy = SeedingStrategy.INPUT_ORDER,
+            seededPlayerCount = 0
         )
 
     fun startPhase(
         playerIds: List<Int>,
         qualifiers: Int,
         thirdPlacePlayoff: Boolean = false,
-        seedingStrategy: SeedingStrategy = SeedingStrategy.INPUT_ORDER
+        seedingStrategy: SeedingStrategy = SeedingStrategy.INPUT_ORDER,
+        seededPlayerCount: Int = 0
     ): List<Match> {
         require(playerIds.size >= 2) { "Tournament must have at least 2 players" }
         if (thirdPlacePlayoff) {
             require(qualifiers == 1) { "Third-place playoff requires qualifiers to be 1" }
             require(playerIds.size >= 4) { "Third-place playoff requires at least 4 players" }
+        }
+        when (seedingStrategy) {
+            SeedingStrategy.PARTIAL_SEEDED -> {
+                require(seededPlayerCount in 1 until playerIds.size) {
+                    "Partial seeding requires seededPlayerCount between 1 and ${playerIds.size - 1}"
+                }
+            }
+
+            else -> {
+                require(seededPlayerCount == 0) {
+                    "seededPlayerCount is only supported with PARTIAL_SEEDED strategy"
+                }
+            }
         }
 
         val totalRounds = ceil(log2(playerIds.size.toDouble())).toInt()
@@ -40,7 +55,7 @@ object KnockoutService : PhaseService {
         val allMatches = mutableListOf<Match>()
         var matchId = 0
 
-        val playerPairs = groupPlayerIdsIntoPairs(playerIds, numByes, seedingStrategy)
+        val playerPairs = groupPlayerIdsIntoPairs(playerIds, numByes, seedingStrategy, seededPlayerCount)
         playerPairs.forEach {
             val newMatch = Match(
                 id = matchId++,
@@ -123,24 +138,68 @@ object KnockoutService : PhaseService {
     private fun groupPlayerIdsIntoPairs(
         playerIds: List<Int>,
         numByes: Int,
-        seedingStrategy: SeedingStrategy
+        seedingStrategy: SeedingStrategy,
+        seededPlayerCount: Int
     ): List<Pair<Int, Int?>> {
-        val seededPlayerIds = when (seedingStrategy) {
-            SeedingStrategy.INPUT_ORDER -> playerIds
-            SeedingStrategy.RANDOM -> playerIds.shuffled()
-        }
-
-        val pairs = mutableListOf<Pair<Int, Int?>>()
-        for (i in 0 until numByes) {
-            pairs.add(seededPlayerIds[i] to null)
-        }
-
-        val remaining = seededPlayerIds.drop(numByes)
-        remaining.chunked(2) { pair -> pairs.add(pair[0] to pair[1]) }
-
         return when (seedingStrategy) {
-            SeedingStrategy.INPUT_ORDER -> pairs
-            SeedingStrategy.RANDOM -> pairs.shuffled()
+            SeedingStrategy.INPUT_ORDER -> {
+                val pairs = mutableListOf<Pair<Int, Int?>>()
+                for (i in 0 until numByes) {
+                    pairs.add(playerIds[i] to null)
+                }
+
+                val remaining = playerIds.drop(numByes)
+                remaining.chunked(2) { pair -> pairs.add(pair[0] to pair[1]) }
+                pairs
+            }
+
+            SeedingStrategy.RANDOM -> {
+                val shuffledPlayerIds = playerIds.shuffled()
+                val pairs = mutableListOf<Pair<Int, Int?>>()
+                for (i in 0 until numByes) {
+                    pairs.add(shuffledPlayerIds[i] to null)
+                }
+
+                val remaining = shuffledPlayerIds.drop(numByes)
+                remaining.chunked(2) { pair -> pairs.add(pair[0] to pair[1]) }
+                pairs.shuffled()
+            }
+
+            SeedingStrategy.PARTIAL_SEEDED -> {
+                val seededPlayers = playerIds.take(seededPlayerCount)
+                val unseededPlayers = playerIds.drop(seededPlayerCount).shuffled().toMutableList()
+                val pairs = mutableListOf<Pair<Int, Int?>>()
+
+                val byesForSeeded = minOf(numByes, seededPlayers.size)
+                for (i in 0 until byesForSeeded) {
+                    pairs.add(seededPlayers[i] to null)
+                }
+
+                repeat(numByes - byesForSeeded) {
+                    val byePlayer = unseededPlayers.removeAt(0)
+                    pairs.add(byePlayer to null)
+                }
+
+                val seededQueue = ArrayDeque(seededPlayers.drop(byesForSeeded))
+                while (seededQueue.isNotEmpty()) {
+                    val seed = seededQueue.removeFirst()
+                    val opponent = when {
+                        unseededPlayers.isNotEmpty() -> unseededPlayers.removeAt(0)
+                        seededQueue.isNotEmpty() -> seededQueue.removeFirst()
+                        else -> null
+                    }
+                    pairs.add(seed to opponent)
+                }
+
+                unseededPlayers.chunked(2) { pair ->
+                    if (pair.size == 2) {
+                        pairs.add(pair[0] to pair[1])
+                    } else {
+                        pairs.add(pair[0] to null)
+                    }
+                }
+                pairs
+            }
         }
     }
 

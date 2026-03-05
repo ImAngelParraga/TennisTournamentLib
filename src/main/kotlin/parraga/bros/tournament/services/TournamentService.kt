@@ -18,7 +18,8 @@ object TournamentService {
                 playerIds = playerIds,
                 qualifiers = config.qualifiers,
                 thirdPlacePlayoff = config.thirdPlacePlayoff,
-                seedingStrategy = config.seedingStrategy
+                seedingStrategy = config.seedingStrategy,
+                seededPlayerCount = config.seededPlayerCount
             )
         }
     }

@@ -1,6 +1,6 @@
 # CONTINUITY
 
-Last Updated: 2026-03-03
+Last Updated: 2026-03-05
 Repository: TennisTournamentLib
 
 ## Update Rule
@@ -9,13 +9,12 @@ Include: branch, uncommitted state, what changed, and compatibility impact on ba
 
 ## Current State
 - Branch: `master`
-- Local state currently includes user-side pending files:
-  - staged: `.aiignore`
-  - untracked: `SESSION_HANDOFF.md`
 - Local implementation changes (not committed yet):
   - modified: `Phase.kt`, `KnockoutService.kt`, `TournamentService.kt`, `KnockoutServiceTest.kt`
+  - untracked: `SESSION_HANDOFF.md`
 
 ## Recent Completed Work
+- Unreleased local change: add `PARTIAL_SEEDED` mode with `seededPlayerCount` and validation.
 - Unreleased local change: add configurable knockout seeding strategy with deterministic default.
 - Unreleased local change: fix stale `-1` bye assertion and extend seeding tests.
 - `dd3a556` Add third-place playoff bracket support
@@ -28,7 +27,8 @@ Include: branch, uncommitted state, what changed, and compatibility impact on ba
 - Knockout bracket generation is implemented.
 - Knockout seeding supports:
   - deterministic input-order seeding (default),
-  - optional randomized seeding.
+  - optional randomized seeding,
+  - partial seeding (top N fixed, remaining players randomized).
 - Qualifier-aware round computation exists (`computeRounds`).
 - Third-place playoff generation is supported (with constraints).
 - Match score application exists (`Match.applyScore`).
@@ -54,4 +54,4 @@ Include: branch, uncommitted state, what changed, and compatibility impact on ba
 ## Next Suggested Actions
 1. Decide product direction for Group/Swiss (implement or remove from public contract for now).
 2. Expand test coverage for edge-case scoring and progression invariants.
-3. If backend should expose seeding choice, wire `KnockoutConfig.seedingStrategy` through backend API/DTO layer.
+3. Wire backend API/DTO to expose `KnockoutConfig.seedingStrategy` and `seededPlayerCount`.
