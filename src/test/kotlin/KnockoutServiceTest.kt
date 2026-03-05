@@ -8,6 +8,7 @@ import parraga.bros.tournament.domain.Match
 import parraga.bros.tournament.domain.MatchDependency
 import parraga.bros.tournament.domain.MatchStatus
 import parraga.bros.tournament.domain.Outcome
+import parraga.bros.tournament.domain.SeededParticipant
 import parraga.bros.tournament.domain.SeedingStrategy
 
 class KnockoutServiceTest {
@@ -175,6 +176,78 @@ class KnockoutServiceTest {
         }
 
         assertTrue(exception.message!!.contains("seededPlayerCount is only supported"))
+    }
+
+    @Test
+    fun `startPhase with participant seeds supports partial seeding without seeded count`() {
+        val participants = listOf(
+            SeededParticipant(1, seed = 1),
+            SeededParticipant(2, seed = 2),
+            SeededParticipant(3, seed = null),
+            SeededParticipant(4, seed = null),
+            SeededParticipant(5, seed = null),
+            SeededParticipant(6, seed = null),
+            SeededParticipant(7, seed = null),
+            SeededParticipant(8, seed = null)
+        )
+        val seeded = setOf(1, 2)
+
+        val matches = KnockoutService.startPhase(
+            participants = participants,
+            qualifiers = 1,
+            thirdPlacePlayoff = false,
+            seedingStrategy = SeedingStrategy.PARTIAL_SEEDED
+        )
+
+        val round1Matches = matches.filter { it.round == 1 }
+        val seededMatches = round1Matches.filter { it.player1Id in seeded || it.player2Id in seeded }
+        assertEquals(2, seededMatches.size)
+        seededMatches.forEach { match ->
+            val bothSeeded = match.player1Id in seeded && match.player2Id in seeded
+            assertTrue(!bothSeeded)
+        }
+    }
+
+    @Test
+    fun `startPhase with participant seeds rejects duplicate seeds`() {
+        val participants = listOf(
+            SeededParticipant(1, seed = 1),
+            SeededParticipant(2, seed = 1),
+            SeededParticipant(3, seed = null),
+            SeededParticipant(4, seed = null)
+        )
+
+        val exception = assertThrows<IllegalArgumentException> {
+            KnockoutService.startPhase(
+                participants = participants,
+                qualifiers = 1,
+                thirdPlacePlayoff = false,
+                seedingStrategy = SeedingStrategy.PARTIAL_SEEDED
+            )
+        }
+
+        assertTrue(exception.message!!.contains("Duplicate seed values"))
+    }
+
+    @Test
+    fun `startPhase with participant seeds rejects partial strategy with no seeded participants`() {
+        val participants = listOf(
+            SeededParticipant(1, seed = null),
+            SeededParticipant(2, seed = null),
+            SeededParticipant(3, seed = null),
+            SeededParticipant(4, seed = null)
+        )
+
+        val exception = assertThrows<IllegalArgumentException> {
+            KnockoutService.startPhase(
+                participants = participants,
+                qualifiers = 1,
+                thirdPlacePlayoff = false,
+                seedingStrategy = SeedingStrategy.PARTIAL_SEEDED
+            )
+        }
+
+        assertTrue(exception.message!!.contains("at least one seeded participant"))
     }
 
     @Test

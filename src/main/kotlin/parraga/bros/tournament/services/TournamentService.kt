@@ -5,6 +5,7 @@ import parraga.bros.tournament.domain.Match
 import parraga.bros.tournament.domain.MatchStatus
 import parraga.bros.tournament.domain.Phase
 import parraga.bros.tournament.domain.PhaseConfiguration
+import parraga.bros.tournament.domain.SeededParticipant
 
 object TournamentService {
 
@@ -20,6 +21,22 @@ object TournamentService {
                 thirdPlacePlayoff = config.thirdPlacePlayoff,
                 seedingStrategy = config.seedingStrategy,
                 seededPlayerCount = config.seededPlayerCount
+            )
+        }
+    }
+
+    fun startPhaseWithParticipants(phase: Phase, participants: List<SeededParticipant>) = when (phase.format) {
+        // Group/Swiss currently ignore seed, but use the same participant contract for future seeding support.
+        Format.GROUP -> GroupService.startPhase(participants.map { it.playerId })
+        Format.SWISS -> SwissService.startPhase(participants.map { it.playerId })
+        Format.KNOCKOUT -> {
+            val config = phase.configuration as? PhaseConfiguration.KnockoutConfig
+                ?: throw IllegalArgumentException("Knockout phase requires KnockoutConfig configuration")
+            KnockoutService.startPhase(
+                participants = participants,
+                qualifiers = config.qualifiers,
+                thirdPlacePlayoff = config.thirdPlacePlayoff,
+                seedingStrategy = config.seedingStrategy
             )
         }
     }

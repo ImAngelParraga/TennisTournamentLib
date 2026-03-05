@@ -10,10 +10,13 @@ Include: branch, uncommitted state, what changed, and compatibility impact on ba
 ## Current State
 - Branch: `master`
 - Local implementation changes (not committed yet):
-  - modified: `Phase.kt`, `KnockoutService.kt`, `TournamentService.kt`, `KnockoutServiceTest.kt`
-  - untracked: `SESSION_HANDOFF.md`
+  - modified: `KnockoutService.kt`, `TournamentService.kt`, `KnockoutServiceTest.kt`, `CONTINUITY.md`
+  - untracked: `SeededParticipant.kt`
 
 ## Recent Completed Work
+- Unreleased local change: generalized seed model to `SeededParticipant` for cross-format API use.
+- Unreleased local change: added participant-based API `startPhaseWithParticipants` and wired it for
+  Group/Swiss (currently seed ignored there) and Knockout (seed-aware).
 - Unreleased local change: add `PARTIAL_SEEDED` mode with `seededPlayerCount` and validation.
 - Unreleased local change: add configurable knockout seeding strategy with deterministic default.
 - Unreleased local change: fix stale `-1` bye assertion and extend seeding tests.
@@ -28,7 +31,8 @@ Include: branch, uncommitted state, what changed, and compatibility impact on ba
 - Knockout seeding supports:
   - deterministic input-order seeding (default),
   - optional randomized seeding,
-  - partial seeding (top N fixed, remaining players randomized).
+  - partial seeding (top seeded participants fixed, remaining participants randomized).
+  - explicit participant input (`SeededParticipant(playerId, seed?)`) for seed-driven generation.
 - Qualifier-aware round computation exists (`computeRounds`).
 - Third-place playoff generation is supported (with constraints).
 - Match score application exists (`Match.applyScore`).
@@ -54,4 +58,4 @@ Include: branch, uncommitted state, what changed, and compatibility impact on ba
 ## Next Suggested Actions
 1. Decide product direction for Group/Swiss (implement or remove from public contract for now).
 2. Expand test coverage for edge-case scoring and progression invariants.
-3. Wire backend API/DTO to expose `KnockoutConfig.seedingStrategy` and `seededPlayerCount`.
+3. Complete backend wiring for explicit participant seeds and consider deprecating `seededPlayerCount`.
