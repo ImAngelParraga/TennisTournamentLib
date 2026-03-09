@@ -25,7 +25,8 @@ sealed interface PhaseConfiguration {
     ) : PhaseConfiguration
 
     data class SwissConfig(
-        val pointsPerWin: Int = 1
+        val pointsPerWin: Int = 1,
+        val advancingCount: Int? = null
     ) : PhaseConfiguration
 }
 

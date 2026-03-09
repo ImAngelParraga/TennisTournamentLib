@@ -10,8 +10,8 @@ import parraga.bros.tournament.domain.SeededParticipant
 object TournamentService {
 
     fun startPhase(phase: Phase, playerIds: List<Int>) = when (phase.format) {
-        Format.GROUP -> GroupService.startPhase(playerIds)
-        Format.SWISS -> SwissService.startPhase(playerIds)
+        Format.GROUP -> GroupService.startPhase(phase, playerIds.map { SeededParticipant(it) })
+        Format.SWISS -> SwissService.startPhase(phase, playerIds.map { SeededParticipant(it) })
         Format.KNOCKOUT -> {
             val config = phase.configuration as? PhaseConfiguration.KnockoutConfig
                 ?: throw IllegalArgumentException("Knockout phase requires KnockoutConfig configuration")
@@ -26,9 +26,8 @@ object TournamentService {
     }
 
     fun startPhaseWithParticipants(phase: Phase, participants: List<SeededParticipant>) = when (phase.format) {
-        // Group/Swiss currently ignore seed, but use the same participant contract for future seeding support.
-        Format.GROUP -> GroupService.startPhase(participants.map { it.playerId })
-        Format.SWISS -> SwissService.startPhase(participants.map { it.playerId })
+        Format.GROUP -> GroupService.startPhase(phase, participants)
+        Format.SWISS -> SwissService.startPhase(phase, participants)
         Format.KNOCKOUT -> {
             val config = phase.configuration as? PhaseConfiguration.KnockoutConfig
                 ?: throw IllegalArgumentException("Knockout phase requires KnockoutConfig configuration")
@@ -42,24 +41,22 @@ object TournamentService {
     }
 
     fun startNextRound(phase: Phase): List<Match> {
-        val allMatches = phase.matches
+        return when (phase.format) {
+            Format.GROUP -> GroupService.startNextRound(phase)
+            Format.SWISS -> SwissService.startNextRound(phase)
+            Format.KNOCKOUT -> {
+                val allMatches = phase.matches
+                val lastCompletedRound = getLastCompletedRound(allMatches)
+                val previousRoundMatches = allMatches.filter { it.round == lastCompletedRound }
+                assertMatchesForRoundAreCompleted(previousRoundMatches, lastCompletedRound)
 
-        val lastCompletedRound = getLastCompletedRound(allMatches)
+                val nextRound = lastCompletedRound + 1
+                val nextRoundMatches = allMatches.filter { it.round == nextRound }
+                assertRoundMatchesAreNotEmpty(nextRoundMatches, nextRound)
 
-        val previousRoundMatches = allMatches.filter { it.round == lastCompletedRound }
-        assertMatchesForRoundAreCompleted(previousRoundMatches, lastCompletedRound)
-
-        val nextRound = lastCompletedRound + 1
-        val nextRoundMatches = allMatches.filter { it.round == nextRound }
-        assertRoundMatchesAreNotEmpty(nextRoundMatches, nextRound)
-
-        val phaseService = when (phase.format) {
-            Format.KNOCKOUT -> KnockoutService
-            Format.GROUP -> GroupService
-            Format.SWISS -> SwissService
+                KnockoutService.startNextRound(nextRoundMatches, previousRoundMatches)
+            }
         }
-
-        return phaseService.startNextRound(nextRoundMatches, previousRoundMatches)
     }
 
     private fun getLastCompletedRound(matches: List<Match>) =

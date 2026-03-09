@@ -1,6 +1,6 @@
 # CONTINUITY
 
-Last Updated: 2026-03-05
+Last Updated: 2026-03-09
 Repository: TennisTournamentLib
 
 ## Update Rule
@@ -14,6 +14,16 @@ Include: branch, uncommitted state, what changed, and compatibility impact on ba
   - modified: `CONTINUITY.md`
 
 ## Recent Completed Work
+- (uncommitted in current session) Implemented Group and Swiss support in the tournament engine:
+  - added `GroupService` single round-robin generation with group-aware match ids/rounds
+  - added `SwissService` round-one generation plus standings-based next-round generation
+  - extended Swiss config with explicit `advancingCount`; omitted means all players advance
+  - refactored `TournamentService` dispatch so Group/Swiss receive full phase/config state
+  - added lib tests for group scheduling and Swiss progression behavior
+  - validated with:
+    - `./gradlew.bat test --no-daemon --tests "parraga.bros.tournament.services.GroupServiceTest"` (pass)
+    - `./gradlew.bat test --no-daemon --tests "parraga.bros.tournament.services.SwissServiceTest"` (pass)
+    - `./gradlew.bat test --no-daemon` (pass; Kotlin daemon fell back but build succeeded)
 - (uncommitted in current session) Added AI operating docs:
   - `AGENTS.md` with workflow rules
   - `AI_CONTEXT.md` for fast onboarding and cross-repo awareness
@@ -38,8 +48,6 @@ Include: branch, uncommitted state, what changed, and compatibility impact on ba
 - Match score application exists (`Match.applyScore`).
 
 ## Known Gaps
-- `GroupService` remains TODO.
-- `SwissService` remains TODO.
 - Additional scoring/domain validation depth is still limited.
 
 ## Integration Notes (Backend)
@@ -56,6 +64,6 @@ Include: branch, uncommitted state, what changed, and compatibility impact on ba
   - run `./gradlew --stop` before retrying.
 
 ## Next Suggested Actions
-1. Decide product direction for Group/Swiss (implement or remove from public contract for now).
-2. Expand test coverage for edge-case scoring and progression invariants.
+1. Expand test coverage for edge-case scoring and progression invariants across all formats.
+2. Decide whether Group/Swiss need richer seeding semantics beyond stable participant order.
 3. Complete backend wiring for explicit participant seeds and consider deprecating `seededPlayerCount`.
