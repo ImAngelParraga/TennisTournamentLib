@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "parraga.bros"
-version = "0.0.2"
+version = "0.0.3"
 
 repositories {
     mavenCentral()
@@ -23,7 +23,7 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             group = "parraga.bros"
-            version = "0.0.1"
+            version = "0.0.3"
             artifactId = "TennisTournamentLib"
 
             from(components["java"])
